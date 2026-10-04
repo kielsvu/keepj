@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="keepr_vault.db" />
+        <exclude domain="sharedpref" path="keepr_pin_store.preferences_pb" />
+        <exclude domain="sharedpref" path="keepr_prefs.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="keepr_vault.db" />
+        <exclude domain="sharedpref" path="keepr_pin_store.preferences_pb" />
+        <exclude domain="sharedpref" path="keepr_prefs.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>
