@@ -38,6 +38,7 @@ class LockViewModel(
     val state: StateFlow<LockState> = _state.asStateFlow()
 
     private var lockoutJob: Job? = null
+    private val pinLength = 6
 
     init {
         viewModelScope.launch {
@@ -53,9 +54,11 @@ class LockViewModel(
 
     fun onDigit(digit: String) {
         if (_state.value.isLockedOut) return
-        val newPin = _state.value.pin + digit
+        val current = _state.value.pin
+        if (current.length >= pinLength) return
+        val newPin = current + digit
         _state.update { it.copy(pin = newPin, error = null) }
-        if (newPin.length >= 6) {
+        if (newPin.length == pinLength) {
             attemptPinUnlock(newPin)
         }
     }
@@ -145,11 +148,7 @@ class LockViewModel(
                 }
                 val minutes = remaining / 60000
                 val seconds = (remaining % 60000) / 1000
-                val text = if (minutes > 0) {
-                    "Try again in ${minutes}m ${seconds}s"
-                } else {
-                    "Try again in ${seconds}s"
-                }
+                val text = if (minutes > 0) "Try again in ${minutes}m ${seconds}s" else "Try again in ${seconds}s"
                 _state.update { it.copy(lockedUntilText = text) }
                 delay(1000)
             }
