@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.animateItem
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -181,7 +180,7 @@ fun VaultScreen(
                                     entry = entry,
                                     onClick = { onEntryClick(entry.id) },
                                     onFavoriteToggle = { viewModel.toggleFavorite(entry) },
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier
                                 )
                             }
                         }
