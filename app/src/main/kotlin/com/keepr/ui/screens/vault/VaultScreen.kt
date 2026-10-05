@@ -162,7 +162,7 @@ fun VaultScreen(
                                     entry = entry,
                                     onClick = { onEntryClick(entry.id) },
                                     onFavoriteToggle = { viewModel.toggleFavorite(entry) },
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier
                                 )
                             }
                         }
