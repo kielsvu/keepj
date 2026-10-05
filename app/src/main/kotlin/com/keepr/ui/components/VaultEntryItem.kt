@@ -31,15 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.keepr.data.model.VaultEntry
-import com.keepr.ui.theme.AccentPurple
 import com.keepr.ui.theme.AccentPurpleContainer
 import com.keepr.ui.theme.AccentPurpleLight
 import com.keepr.ui.theme.FavoriteActive
 import com.keepr.ui.theme.FavoriteInactive
 import com.keepr.ui.theme.KeeprTypography
-import com.keepr.ui.theme.SurfaceMid
 import com.keepr.ui.theme.TextSecondary
-import com.keepr.ui.theme.TextTertiary
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -58,17 +55,17 @@ fun VaultEntryItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .combinedClickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         ServiceIcon(
             serviceName = entry.serviceName,
-            modifier = Modifier.size(44.dp)
+            modifier = Modifier.size(46.dp)
         )
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -109,7 +106,10 @@ fun VaultEntryItem(
             onClick = onFavoriteToggle,
             modifier = Modifier
                 .size(36.dp)
-                .semantics { contentDescription = if (entry.isFavorite) "Remove from favorites" else "Add to favorites" }
+                .semantics {
+                    contentDescription =
+                        if (entry.isFavorite) "Remove from favorites" else "Add to favorites"
+                }
         ) {
             Icon(
                 imageVector = if (entry.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -136,7 +136,7 @@ fun ServiceIcon(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(AccentPurpleContainer),
         contentAlignment = Alignment.Center
     ) {

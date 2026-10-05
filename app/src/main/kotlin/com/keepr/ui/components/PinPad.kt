@@ -1,43 +1,48 @@
 package com.keepr.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.keepr.ui.theme.AccentPurple
-import com.keepr.ui.theme.AccentPurpleMuted
 import com.keepr.ui.theme.BorderDefault
 import com.keepr.ui.theme.KeeprTypography
-import com.keepr.ui.theme.SurfaceMid
 import com.keepr.ui.theme.SurfaceRaised
-import com.keepr.ui.theme.TextPrimary
 import com.keepr.ui.theme.TextSecondary
+import kotlin.math.roundToInt
 
 @Composable
 fun PinDots(
@@ -46,38 +51,49 @@ fun PinDots(
     hasError: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val shakeOffset = remember { Animatable(0f) }
+
+    LaunchedEffect(hasError, pinLength) {
+        if (hasError) {
+            for (i in 0..5) {
+                shakeOffset.animateTo(
+                    targetValue = if (i % 2 == 0) 10f else -10f,
+                    animationSpec = tween(55)
+                )
+            }
+            shakeOffset.animateTo(0f, tween(55))
+        }
+    }
+
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.offset { IntOffset(shakeOffset.value.roundToInt(), 0) },
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(maxLength) { index ->
             val filled = index < pinLength
-            val dotColor by animateColorAsState(
-                targetValue = when {
-                    hasError -> androidx.compose.ui.graphics.Color(0xFFFF6B6B)
-                    filled -> AccentPurple
-                    else -> BorderDefault
-                },
-                animationSpec = tween(150),
-                label = "dot_color"
+            val fillColor by animateColorAsState(
+                targetValue = if (hasError) Color(0xFFFF6B6B) else AccentPurple,
+                animationSpec = tween(120),
+                label = "dot_fill_$index"
             )
             val scale by animateFloatAsState(
-                targetValue = if (filled) 1.1f else 1f,
-                animationSpec = spring(dampingRatio = 0.6f),
-                label = "dot_scale"
+                targetValue = if (filled) 1f else 0.6f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                ),
+                label = "dot_scale_$index"
             )
             Box(
                 modifier = Modifier
                     .scale(scale)
                     .size(14.dp)
-                    .background(
-                        color = if (filled) dotColor else Color.Transparent,
-                        shape = CircleShape
-                    )
+                    .clip(CircleShape)
+                    .background(if (filled) fillColor else Color.Transparent)
                     .border(
-                        width = 1.5.dp,
-                        color = dotColor,
+                        width = if (filled) 0.dp else 1.5.dp,
+                        color = if (filled) Color.Transparent else BorderDefault,
                         shape = CircleShape
                     )
                     .semantics { contentDescription = if (filled) "Filled" else "Empty" }
@@ -93,53 +109,41 @@ fun NumericKeypad(
     modifier: Modifier = Modifier,
     extraAction: @Composable (() -> Unit)? = null
 ) {
-    val rows = listOf(
-        listOf("1", "2", "3"),
-        listOf("4", "5", "6"),
-        listOf("7", "8", "9"),
-        listOf("extra", "0", "del")
-    )
-
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        val rows = listOf(
+            listOf("1", "2", "3"),
+            listOf("4", "5", "6"),
+            listOf("7", "8", "9"),
+            listOf("extra", "0", "del")
+        )
         rows.forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 row.forEach { key ->
                     when (key) {
                         "extra" -> Box(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.size(76.dp),
                             contentAlignment = Alignment.Center
-                        ) {
-                            extraAction?.invoke()
-                        }
+                        ) { extraAction?.invoke() }
+
                         "del" -> Box(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.size(76.dp),
                             contentAlignment = Alignment.Center
-                        ) {
-                            IconButton(
-                                onClick = onDelete,
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .semantics { contentDescription = "Delete" }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Backspace,
-                                    contentDescription = null,
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                        else -> KeypadButton(
-                            digit = key,
-                            onClick = { onDigit(key) },
-                            modifier = Modifier.weight(1f)
-                        )
+                        ) { KeypadActionButton(onClick = onDelete) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Backspace,
+                                contentDescription = "Delete",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }}
+
+                        else -> KeypadDigitButton(digit = key, onClick = { onDigit(key) })
                     }
                 }
             }
@@ -148,30 +152,65 @@ fun NumericKeypad(
 }
 
 @Composable
-private fun KeypadButton(
-    digit: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun KeypadDigitButton(digit: String, onClick: () -> Unit) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.87f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "digit_scale_$digit"
+    )
+
     Box(
-        modifier = modifier,
+        modifier = Modifier
+            .scale(scale)
+            .size(76.dp)
+            .clip(CircleShape)
+            .background(SurfaceRaised)
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    pressed = true
+                    tryAwaitRelease()
+                    pressed = false
+                    onClick()
+                })
+            }
+            .semantics { contentDescription = "Key $digit" },
         contentAlignment = Alignment.Center
     ) {
-        androidx.compose.material3.FilledTonalButton(
-            onClick = onClick,
-            modifier = Modifier
-                .size(72.dp)
-                .semantics { contentDescription = "Key $digit" },
-            shape = CircleShape,
-            colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
-                containerColor = SurfaceRaised,
-                contentColor = TextPrimary
-            )
-        ) {
-            Text(
-                text = digit,
-                style = KeeprTypography.headlineMedium.copy(color = TextPrimary)
-            )
-        }
+        Text(text = digit, style = KeeprTypography.headlineMedium)
     }
+}
+
+@Composable
+private fun KeypadActionButton(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.85f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "action_scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .scale(scale)
+            .size(76.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    pressed = true
+                    tryAwaitRelease()
+                    pressed = false
+                    onClick()
+                })
+            },
+        contentAlignment = Alignment.Center
+    ) { content() }
 }
