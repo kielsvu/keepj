@@ -1,6 +1,7 @@
 package com.keepr.ui.screens.settings
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -60,16 +61,20 @@ class ChangePinViewModel(private val pinManager: PinManager) : ViewModel() {
     private val _state = MutableStateFlow(ChangePinState())
     val state: StateFlow<ChangePinState> = _state.asStateFlow()
 
+    private val pinLength = 6
+
     fun onDigit(digit: String) {
         val s = _state.value
-        if (s.pin.length >= 12) return
+        if (s.pin.length >= pinLength) return
         val newPin = s.pin + digit
         _state.update { it.copy(pin = newPin, error = null) }
 
-        when (s.step) {
-            ChangePinStep.CURRENT -> if (newPin.length >= 6) verifyCurrent(newPin)
-            ChangePinStep.NEW -> if (newPin.length == 12) advanceToConfirm()
-            ChangePinStep.CONFIRM -> if (newPin.length == s.newPin.length) confirmNew(newPin)
+        if (newPin.length == pinLength) {
+            when (s.step) {
+                ChangePinStep.CURRENT -> verifyCurrent(newPin)
+                ChangePinStep.NEW -> advanceToConfirm()
+                ChangePinStep.CONFIRM -> confirmNew(newPin)
+            }
         }
     }
 
@@ -147,36 +152,47 @@ fun ChangePinScreen(
                 AnimatedContent(
                     targetState = state.step,
                     transitionSpec = {
-                        (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it } + fadeOut())
+                        (slideInHorizontally(tween(300)) { it / 3 } + fadeIn(tween(300))) togetherWith
+                                (slideOutHorizontally(tween(200)) { -it / 3 } + fadeOut(tween(150)))
                     },
                     label = "change_pin_step"
                 ) { step ->
                     Text(
                         text = when (step) {
                             ChangePinStep.CURRENT -> "Enter your current PIN"
-                            ChangePinStep.NEW -> "Enter your new PIN"
-                            ChangePinStep.CONFIRM -> "Confirm new PIN"
+                            ChangePinStep.NEW -> "Enter your new 6-digit PIN"
+                            ChangePinStep.CONFIRM -> "Confirm your new PIN"
                         },
                         style = KeeprTypography.bodyMedium.copy(color = TextSecondary),
                         textAlign = TextAlign.Center
                     )
                 }
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(40.dp))
 
                 PinDots(
                     pinLength = state.pin.length,
-                    maxLength = 12,
+                    maxLength = 6,
                     hasError = state.error != null
                 )
 
-                if (state.error != null) {
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = state.error!!,
-                        style = KeeprTypography.bodySmall.copy(color = ErrorColor),
-                        textAlign = TextAlign.Center
-                    )
+                Spacer(Modifier.height(16.dp))
+
+                AnimatedContent(
+                    targetState = state.error,
+                    transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(100)) },
+                    label = "change_pin_error"
+                ) { error ->
+                    if (error != null) {
+                        Text(
+                            text = error,
+                            style = KeeprTypography.bodySmall.copy(color = ErrorColor),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Spacer(Modifier.height(KeeprTypography.bodySmall.fontSize.value.dp))
+                    }
                 }
 
                 Spacer(Modifier.weight(1f))
@@ -187,7 +203,7 @@ fun ChangePinScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(40.dp))
             }
         }
     }
