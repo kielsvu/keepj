@@ -24,39 +24,25 @@ class SetupViewModel(private val pinManager: PinManager) : ViewModel() {
     private val _state = MutableStateFlow(SetupState())
     val state: StateFlow<SetupState> = _state.asStateFlow()
 
-    private val maxPinLength = 12
+    private val pinLength = 6
 
     fun onDigit(digit: String) {
         val current = _state.value
-        if (current.pin.length >= maxPinLength) return
+        if (current.pin.length >= pinLength) return
 
         val newPin = current.pin + digit
         _state.update { it.copy(pin = newPin, error = null) }
 
-        if (newPin.length >= 6) {
+        if (newPin.length == pinLength) {
             when (current.step) {
-                SetupStep.CREATE -> {
-                    // Wait for user to manually proceed or auto-advance after enough length
-                    if (newPin.length == maxPinLength) advanceToConfirm()
-                }
-                SetupStep.CONFIRM -> {
-                    if (newPin.length == current.firstPin.length) confirmPin(newPin)
-                }
+                SetupStep.CREATE -> advanceToConfirm()
+                SetupStep.CONFIRM -> confirmPin(newPin)
             }
         }
     }
 
     fun onDelete() {
         _state.update { it.copy(pin = it.pin.dropLast(1), error = null) }
-    }
-
-    fun onAdvance() {
-        val pin = _state.value.pin
-        if (pin.length < 6) {
-            _state.update { it.copy(error = "PIN must be at least 6 digits") }
-            return
-        }
-        advanceToConfirm()
     }
 
     private fun advanceToConfirm() {
