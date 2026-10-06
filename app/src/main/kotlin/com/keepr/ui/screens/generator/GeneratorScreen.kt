@@ -7,10 +7,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,13 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -51,13 +51,14 @@ import com.keepr.ui.theme.AccentPurpleContainer
 import com.keepr.ui.theme.AccentPurpleLight
 import com.keepr.ui.theme.Background
 import com.keepr.ui.theme.BorderDefault
+import com.keepr.ui.theme.BorderSubtle
 import com.keepr.ui.theme.KeeprTypography
 import com.keepr.ui.theme.SurfaceMid
+import com.keepr.ui.theme.TextPrimary
 import com.keepr.ui.theme.TextSecondary
 import com.keepr.ui.theme.TextTertiary
 import com.keepr.utils.ClipboardUtils
 import com.keepr.utils.PasswordStrength
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun GeneratorScreen(
@@ -85,140 +86,191 @@ fun GeneratorScreen(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = TextSecondary)
             }
             Text(
-                text = "Password generator",
+                text = "Password Generator",
                 style = KeeprTypography.titleLarge,
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
+                color = TextPrimary,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 4.dp)
             )
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Spacer(Modifier.height(4.dp))
+            item { Spacer(Modifier.height(4.dp)) }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceMid)
-                    .border(1.dp, BorderDefault, RoundedCornerShape(16.dp))
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AnimatedContent(
-                    targetState = state.generatedPassword,
-                    transitionSpec = {
-                        fadeIn(tween(150)) togetherWith fadeOut(tween(100))
-                    },
-                    label = "password_anim"
-                ) { password ->
-                    Text(
-                        text = password,
-                        style = KeeprTypography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                StrengthBar(strength = state.strength)
-
-                Spacer(Modifier.height(16.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    IconButton(
-                        onClick = { viewModel.regenerate() },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(AccentPurpleContainer)
-                            .size(44.dp)
-                    ) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = "Regenerate", tint = AccentPurpleLight)
-                    }
-                    IconButton(
-                        onClick = {
-                            ClipboardUtils.copyToClipboard(context, "Password", state.generatedPassword)
-                        },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(AccentPurpleContainer)
-                            .size(44.dp)
-                    ) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = AccentPurpleLight)
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceMid)
-                    .border(1.dp, BorderDefault, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Length", style = KeeprTypography.bodyMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        "${state.options.length}",
-                        style = KeeprTypography.bodyMedium.copy(color = AccentPurpleLight)
-                    )
-                }
-                Slider(
-                    value = state.options.length.toFloat(),
-                    onValueChange = { viewModel.onLength(it.toInt()) },
-                    valueRange = 8f..64f,
-                    steps = 55,
-                    colors = SliderDefaults.colors(
-                        thumbColor = AccentPurple,
-                        activeTrackColor = AccentPurple,
-                        inactiveTrackColor = AccentPurpleContainer
-                    )
-                )
-            }
-
-            listOf(
-                Triple("Uppercase", state.options.uppercase) { viewModel.onUppercase(!state.options.uppercase) },
-                Triple("Lowercase", state.options.lowercase) { viewModel.onLowercase(!state.options.lowercase) },
-                Triple("Numbers", state.options.numbers) { viewModel.onNumbers(!state.options.numbers) },
-                Triple("Symbols", state.options.symbols) { viewModel.onSymbols(!state.options.symbols) }
-            ).forEach { (label, checked, toggle) ->
-                Row(
+            // Password display card
+            item {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(SurfaceMid)
-                        .border(1.dp, BorderDefault, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .border(1.dp, BorderDefault, RoundedCornerShape(20.dp))
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(label, style = KeeprTypography.bodyMedium, modifier = Modifier.weight(1f))
-                    Switch(
-                        checked = checked,
-                        onCheckedChange = { toggle() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = AccentPurple,
-                            checkedTrackColor = AccentPurpleContainer
+                    AnimatedContent(
+                        targetState = state.generatedPassword,
+                        transitionSpec = {
+                            fadeIn(tween(150)) togetherWith fadeOut(tween(100))
+                        },
+                        label = "password_anim"
+                    ) { password ->
+                        Text(
+                            text = password,
+                            style = KeeprTypography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                            color = TextPrimary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    StrengthBar(strength = state.strength)
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        IconButton(
+                            onClick = { viewModel.regenerate() },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AccentPurpleContainer)
+                                .size(44.dp)
+                        ) {
+                            Icon(Icons.Outlined.Refresh, contentDescription = "Regenerate", tint = AccentPurpleLight)
+                        }
+                        IconButton(
+                            onClick = {
+                                ClipboardUtils.copyToClipboard(context, "Password", state.generatedPassword)
+                            },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AccentPurpleContainer)
+                                .size(44.dp)
+                        ) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = AccentPurpleLight)
+                        }
+                    }
+                }
+            }
+
+            // Length card
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(SurfaceMid)
+                        .border(1.dp, BorderDefault, RoundedCornerShape(16.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Length",
+                            style = KeeprTypography.bodyMedium,
+                            color = TextPrimary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "${state.options.length}",
+                            style = KeeprTypography.labelLarge,
+                            color = AccentPurple
+                        )
+                    }
+                    Slider(
+                        value = state.options.length.toFloat(),
+                        onValueChange = { viewModel.onLength(it.toInt()) },
+                        valueRange = 8f..64f,
+                        steps = 55,
+                        colors = SliderDefaults.colors(
+                            thumbColor = AccentPurple,
+                            activeTrackColor = AccentPurple,
+                            inactiveTrackColor = AccentPurpleContainer
                         )
                     )
                 }
             }
 
-            if (onUsePassword != null) {
-                Spacer(Modifier.height(4.dp))
-                KeeprPrimaryButton(
-                    text = "Use this password",
-                    onClick = { onUsePassword(state.generatedPassword) }
-                )
+            // Options grouped card
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(SurfaceMid)
+                        .border(1.dp, BorderDefault, RoundedCornerShape(16.dp))
+                ) {
+                    OptionRow(
+                        label = "Uppercase",
+                        checked = state.options.uppercase,
+                        onCheckedChange = { viewModel.onUppercase(it) }
+                    )
+                    HorizontalDivider(color = BorderSubtle, thickness = 1.dp)
+                    OptionRow(
+                        label = "Lowercase",
+                        checked = state.options.lowercase,
+                        onCheckedChange = { viewModel.onLowercase(it) }
+                    )
+                    HorizontalDivider(color = BorderSubtle, thickness = 1.dp)
+                    OptionRow(
+                        label = "Numbers",
+                        checked = state.options.numbers,
+                        onCheckedChange = { viewModel.onNumbers(it) }
+                    )
+                    HorizontalDivider(color = BorderSubtle, thickness = 1.dp)
+                    OptionRow(
+                        label = "Symbols",
+                        checked = state.options.symbols,
+                        onCheckedChange = { viewModel.onSymbols(it) }
+                    )
+                }
             }
 
-            Spacer(Modifier.height(16.dp))
+            if (onUsePassword != null) {
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    KeeprPrimaryButton(
+                        text = "Use this password",
+                        onClick = { onUsePassword(state.generatedPassword) }
+                    )
+                }
+            }
+
+            item { Spacer(Modifier.height(8.dp)) }
         }
+    }
+}
+
+@Composable
+private fun OptionRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            style = KeeprTypography.bodyMedium,
+            color = TextPrimary,
+            modifier = Modifier.weight(1f)
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = AccentPurple,
+                checkedTrackColor = AccentPurpleContainer
+            )
+        )
     }
 }
 
@@ -250,7 +302,8 @@ private fun StrengthBar(strength: PasswordStrength) {
         Spacer(Modifier.width(8.dp))
         Text(
             text = strength.label,
-            style = KeeprTypography.labelSmall.copy(color = color)
+            style = KeeprTypography.labelSmall,
+            color = color
         )
     }
 }
