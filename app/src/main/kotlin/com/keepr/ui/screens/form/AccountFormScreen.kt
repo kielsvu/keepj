@@ -36,8 +36,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,18 +53,24 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import com.keepr.data.model.VaultCategory
 import com.keepr.ui.components.KeeprPrimaryButton
 import com.keepr.ui.components.KeeprTextField
 import com.keepr.ui.theme.AccentPurple
 import com.keepr.ui.theme.AccentPurpleContainer
 import com.keepr.ui.theme.AccentPurpleLight
+import androidx.compose.ui.draw.scale
 import com.keepr.ui.theme.Background
 import com.keepr.ui.theme.BorderDefault
 import com.keepr.ui.theme.FavoriteActive
 import com.keepr.ui.theme.KeeprTypography
 import com.keepr.ui.theme.SurfaceMid
+import com.keepr.ui.theme.TextPrimary
 import com.keepr.ui.theme.TextSecondary
 import com.keepr.ui.theme.TextTertiary
 
@@ -257,36 +262,10 @@ fun AccountFormScreen(
                 maxLines = 6
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceMid)
-                    .border(1.dp, BorderDefault, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    if (state.isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
-                    contentDescription = null,
-                    tint = if (state.isFavorite) FavoriteActive else TextSecondary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    "Favorite",
-                    style = KeeprTypography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = state.isFavorite,
-                    onCheckedChange = { viewModel.onFavorite(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = AccentPurple,
-                        checkedTrackColor = AccentPurpleContainer
-                    )
-                )
-            }
+            FavoriteRow(
+                isFavorite = state.isFavorite,
+                onToggle = { viewModel.onFavorite(!state.isFavorite) }
+            )
 
             Spacer(Modifier.height(8.dp))
 
@@ -298,5 +277,51 @@ fun AccountFormScreen(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+}
+
+@Composable
+private fun FavoriteRow(
+    isFavorite: Boolean,
+    onToggle: () -> Unit
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "favorite_row_scale"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceMid)
+            .border(1.dp, BorderDefault, RoundedCornerShape(12.dp))
+            .pointerInput(onToggle) {
+                detectTapGestures(
+                    onPress = {
+                        pressed = true
+                        tryAwaitRelease()
+                        pressed = false
+                        onToggle()
+                    }
+                )
+            }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            if (isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
+            contentDescription = null,
+            tint = if (isFavorite) FavoriteActive else TextTertiary,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            "Add to Favorites",
+            style = KeeprTypography.bodyMedium,
+            color = if (isFavorite) FavoriteActive else TextPrimary
+        )
     }
 }
